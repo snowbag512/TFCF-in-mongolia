@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  html, body { margin:0; padding:0; background:oklch(0.97 0.008 85); }
+  a { color: oklch(0.50 0.11 195); }
+  a:hover { color: oklch(0.42 0.12 195); }
+  .lf-num { font-family:"IBM Plex Sans",sans-serif; font-weight:700; color:oklch(0.22 0.02 60); text-align:center; text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff; }
+  .leaflet-tile { opacity:1 !important; }
+  .leaflet-container { font-family:"Noto Sans TC","IBM Plex Sans",sans-serif; background:oklch(0.94 0.008 85); }
+  .leaflet-popup-content { margin:12px 14px; font-family:"Noto Sans TC","IBM Plex Sans",sans-serif; }
+  ::-webkit-scrollbar { width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb { background:oklch(0.85 0.01 85); border-radius:6px; }
+</style>
+</helmet>
+<div style="font-family:'Noto Sans TC','IBM Plex Sans',sans-serif; color:oklch(0.22 0.02 60); background:oklch(0.97 0.008 85); min-height:100vh; display:flex; flex-direction:column;">
+
+  <header style="display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px 24px; padding:20px 28px 16px; borderBottom:1px solid oklch(0.89 0.01 85); background:oklch(0.99 0.006 85);">
+    <div>
+      <div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:oklch(0.55 0.11 195); font-weight:600; font-family:'IBM Plex Sans',sans-serif;">TFCF Mongolia Branch Office</div>
+      <h1 style="margin:6px 0 4px; font-size:26px; font-weight:900; letter-spacing:-0.01em; line-height:1.15;">家扶基金會蒙古分事務所　扶助區域分布圖</h1>
+      <div style="font-size:13px; color:oklch(0.48 0.02 60); line-height:1.5;">Service Coverage by District — Ulaanbaatar &amp; Töv Province　·　統計時間 Data as of <strong>2026 / 06</strong></div>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <div style="display:flex; background:oklch(0.93 0.01 85); border-radius:9px; padding:3px;">
+        <button onClick="{{ setHouseholds }}" style="{{ tabHouseholdsStyle }}">戶數 <span style="opacity:0.7; font-size:11px;">Households</span></button>
+        <button onClick="{{ setChildren }}" style="{{ tabChildrenStyle }}">兒童數 <span style="opacity:0.7; font-size:11px;">Children</span></button>
+      </div>
+    </div>
+  </header>
+
+  <div style="display:flex; flex-wrap:wrap; align-items:stretch; flex:1; min-height:0;">
+
+    <aside style="flex:1 1 360px; min-width:300px; max-width:440px; display:flex; flex-direction:column; gap:0; border-right:1px solid oklch(0.89 0.01 85); background:oklch(0.99 0.006 85); max-height:calc(100vh - 96px); overflow:auto;">
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1px; background:oklch(0.89 0.01 85); border-bottom:1px solid oklch(0.89 0.01 85);">
+        <div style="background:oklch(0.99 0.006 85); padding:14px 18px;">
+          <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:oklch(0.52 0.02 60); font-weight:600; font-family:'IBM Plex Sans',sans-serif;">扶助戶數 Households</div>
+          <div style="font-size:30px; font-weight:900; font-family:'IBM Plex Sans',sans-serif; letter-spacing:-0.02em; margin-top:2px;">3,231</div>
+        </div>
+        <div style="background:oklch(0.99 0.006 85); padding:14px 18px;">
+          <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:oklch(0.52 0.02 60); font-weight:600; font-family:'IBM Plex Sans',sans-serif;">扶助兒童 Children</div>
+          <div style="font-size:30px; font-weight:900; font-family:'IBM Plex Sans',sans-serif; letter-spacing:-0.02em; margin-top:2px; color:oklch(0.50 0.11 195);">10,699</div>
+        </div>
+      </div>
+
+      <div style="padding:16px 18px 8px; display:flex; align-items:baseline; justify-content:space-between; gap:12px;">
+        <div style="font-size:13px; font-weight:700;">行政區排行 <span style="font-weight:400; color:oklch(0.52 0.02 60); font-size:11px;">By district</span></div>
+        <div style="font-size:11px; color:oklch(0.52 0.02 60);">{{ metricLabel }}</div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:2px; padding:0 10px 16px;">
+        <sc-for list="{{ ranked }}" as="row" hint-placeholder-count="15">
+          <button onClick="{{ row.onClick }}" onMouseEnter="{{ row.onEnter }}" onMouseLeave="{{ row.onLeave }}" style="{{ row.rowStyle }}">
+            <span style="{{ row.badgeStyle }}">{{ row.no }}</span>
+            <span style="flex:1; min-width:0; text-align:left;">
+              <span style="display:block; font-size:14px; font-weight:700; line-height:1.25; letter-spacing:0.02em; font-family:'IBM Plex Sans','Noto Sans TC',sans-serif;">{{ row.code }}</span>
+              <span style="display:block; font-size:10.5px; color:oklch(0.54 0.02 60); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ row.zh }}</span>
+            </span>
+            <span style="width:96px; flex:none; display:flex; align-items:center; gap:8px;">
+              <span style="flex:1; height:7px; border-radius:4px; background:oklch(0.92 0.01 85); overflow:hidden;">
+                <span style="{{ row.barStyle }}"></span>
+              </span>
+              <span style="width:38px; text-align:right; font-size:12px; font-weight:700; font-family:'IBM Plex Sans',sans-serif; font-variant-numeric:tabular-nums;">{{ row.value }}</span>
+            </span>
+          </button>
+        </sc-for>
+      </div>
+
+      <div style="padding:4px 18px 22px; border-top:1px solid oklch(0.91 0.01 85);">
+        <div style="font-size:13px; font-weight:700; margin:16px 0 10px;">服務據點 <span style="font-weight:400; color:oklch(0.52 0.02 60); font-size:11px;">Facilities</span></div>
+
+        <div style="border:1px solid oklch(0.88 0.01 85); border-radius:10px; padding:13px 14px; background:oklch(1 0 0); margin-bottom:10px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+            <svg width="12" height="15" viewBox="0 0 24 30" style="flex:none"><path d="M12 0.8C6.2 0.8 1.6 5.4 1.6 11.2c0 7.8 10.4 18 10.4 18s10.4-10.2 10.4-18C22.4 5.4 17.8 0.8 12 0.8z" fill="oklch(0.55 0.17 32)"></path><circle cx="12" cy="11" r="4.2" fill="#fff"></circle></svg>
+            <span style="font-size:13.5px; font-weight:700;">家扶蒙古中心</span>
+            <span style="font-size:10.5px; color:oklch(0.54 0.02 60); font-family:'IBM Plex Sans',sans-serif;">Mongolia Center</span>
+          </div>
+          <div style="font-size:11.5px; line-height:1.6; color:oklch(0.40 0.02 60);">40th Building, Aman khuur-1, 313, 133, 783/137, 313/1373/13720<br />巴彥朱日赫區 Bayanzurkh, 烏蘭巴托市 Ulaanbaatar</div>
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <button onClick="{{ flyCenter }}" style="font:600 11.5px/1 'IBM Plex Sans',sans-serif; padding:7px 11px; border-radius:7px; border:1px solid oklch(0.86 0.01 85); background:oklch(0.97 0.008 85); cursor:pointer; color:oklch(0.28 0.02 60);">在地圖定位</button>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=40th%20Building%2C%20Aman%20khuur-1%2C%20Bayanzurkh%2C%20Ulaanbaatar%2C%20Mongolia" target="_blank" rel="noopener" style="font:600 11.5px/1 'IBM Plex Sans',sans-serif; padding:7px 11px; border-radius:7px; border:1px solid oklch(0.86 0.01 85); background:oklch(1 0 0); text-decoration:none; display:inline-flex; align-items:center;">Google 導航 ↗</a>
+          </div>
+        </div>
+
+        <div style="border:1px solid oklch(0.88 0.01 85); border-radius:10px; padding:13px 14px; background:oklch(1 0 0);">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+            <svg width="12" height="15" viewBox="0 0 24 30" style="flex:none"><path d="M12 0.8C6.2 0.8 1.6 5.4 1.6 11.2c0 7.8 10.4 18 10.4 18s10.4-10.2 10.4-18C22.4 5.4 17.8 0.8 12 0.8z" fill="oklch(0.52 0.14 145)"></path><circle cx="12" cy="11" r="4.2" fill="#fff"></circle></svg>
+            <span style="font-size:13.5px; font-weight:700;">家扶村</span>
+            <span style="font-size:10.5px; color:oklch(0.54 0.02 60); font-family:'IBM Plex Sans',sans-serif;">TFCF Village</span>
+          </div>
+          <div style="font-size:11.5px; line-height:1.6; color:oklch(0.40 0.02 60);">RMG5+JWG, 汗烏拉區 Khan-Uul, 12 khoroo<br />Ulaanbaatar 17140, Mongolia</div>
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <button onClick="{{ flyVillage }}" style="font:600 11.5px/1 'IBM Plex Sans',sans-serif; padding:7px 11px; border-radius:7px; border:1px solid oklch(0.86 0.01 85); background:oklch(0.97 0.008 85); cursor:pointer; color:oklch(0.28 0.02 60);">在地圖定位</button>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=RMG5%2BJWG%20Ulaanbaatar%20Mongolia" target="_blank" rel="noopener" style="font:600 11.5px/1 'IBM Plex Sans',sans-serif; padding:7px 11px; border-radius:7px; border:1px solid oklch(0.86 0.01 85); background:oklch(1 0 0); text-decoration:none; display:inline-flex; align-items:center;">Google 導航 ↗</a>
+          </div>
+        </div>
+
+        <p style="font-size:10.5px; line-height:1.6; color:oklch(0.56 0.02 60); margin:14px 0 0;">據點座標為依地址／Plus Code 推算之概略位置，實際位置請以 Google 導航連結為準。<br />Marker positions are approximate; use the Google links for exact navigation.</p>
+      </div>
+    </aside>
+
+    <main style="flex:999 1 520px; min-width:300px; position:relative; min-height:560px;">
+      <div ref="{{ mapRef }}" style="position:absolute; inset:0;"></div>
+
+      <div style="position:absolute; z-index:500; left:14px; bottom:22px; background:oklch(1 0 0 / 0.94); border:1px solid oklch(0.88 0.01 85); border-radius:10px; padding:11px 13px; box-shadow:0 4px 14px oklch(0.2 0.02 60 / 0.10); backdrop-filter:blur(6px);">
+        <div style="font-size:10px; letter-spacing:0.12em; text-transform:uppercase; font-weight:700; color:oklch(0.45 0.02 60); font-family:'IBM Plex Sans',sans-serif; margin-bottom:7px;">{{ metricLabel }}</div>
+        <div style="display:flex; align-items:center; gap:0;">
+          <sc-for list="{{ legend }}" as="sw" hint-placeholder-count="5">
+            <span style="{{ sw.style }}"></span>
+          </sc-for>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:10px; font-family:'IBM Plex Sans',sans-serif; color:oklch(0.48 0.02 60); margin-top:4px;">
+          <span>0</span>
+          <span>{{ legendMax }}</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:5px; margin-top:10px; padding-top:9px; border-top:1px solid oklch(0.91 0.01 85);">
+          <span style="display:flex; align-items:center; gap:7px; font-size:11px;"><svg width="11" height="14" viewBox="0 0 24 30" style="flex:none"><path d="M12 0.8C6.2 0.8 1.6 5.4 1.6 11.2c0 7.8 10.4 18 10.4 18s10.4-10.2 10.4-18C22.4 5.4 17.8 0.8 12 0.8z" fill="oklch(0.55 0.17 32)"></path><circle cx="12" cy="11" r="4.2" fill="#fff"></circle></svg>家扶蒙古中心 Center</span>
+          <span style="display:flex; align-items:center; gap:7px; font-size:11px;"><svg width="11" height="14" viewBox="0 0 24 30" style="flex:none"><path d="M12 0.8C6.2 0.8 1.6 5.4 1.6 11.2c0 7.8 10.4 18 10.4 18s10.4-10.2 10.4-18C22.4 5.4 17.8 0.8 12 0.8z" fill="oklch(0.52 0.14 145)"></path><circle cx="12" cy="11" r="4.2" fill="#fff"></circle></svg>家扶村 TFCF Village</span>
+        </div>
+      </div>
+
+      <div style="{{ statusStyle }}">{{ statusText }}</div>
+    </main>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;basemap&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;street&quot;,&quot;satellite&quot;],&quot;default&quot;:&quot;street&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;地圖&quot;}}">
+const DISTRICTS = [
+  { no:1, code:'SK', zh:'松根海爾汗區', en:'Songinokhairkhan (SK)', key:'Songino',     lat:47.9200, lon:106.7300, h:763, c:2459, grp:'UB' },
+  { no:2, code:'BG', zh:'巴彥高勒區',   en:'Bayangol (BG)',         key:'Bayangol',    lat:47.9100, lon:106.8600, h:173, c:530,  grp:'UB' },
+  { no:3, code:'CH', zh:'青格勒特區',   en:'Chingeltei (CH)',       key:'Chingeltei',  lat:47.9700, lon:106.9000, h:355, c:1111, grp:'UB' },
+  { no:4, code:'SB', zh:'蘇赫巴托區',   en:'Sukhbaatar (SB)',       key:'Sukhbaatar',  lat:47.9550, lon:106.9350, h:185, c:617,  grp:'UB' },
+  { no:5, code:'KH', zh:'汗烏拉區',     en:'Khan-Uul (KH)',         key:'Khan-Uul',    lat:47.8500, lon:106.8900, h:320, c:1062, grp:'UB' },
+  { no:6, code:'BZ', zh:'巴彥朱日赫區', en:'Bayanzurkh (BZ)',       key:'Bayanz',      lat:47.9300, lon:107.0500, h:543, c:1822, grp:'UB' },
+  { no:7, code:'NL', zh:'那萊赫區',     en:'Nalaikh (NL)',          key:'Nalaikh',     lat:47.7750, lon:107.2600, h:248, c:836,  grp:'UB' },
+  { no:8, code:'BN', zh:'巴格諾爾區',   en:'Baganuur (BN)',         key:'Baganuur',    lat:47.8100, lon:108.3400, h:122, c:380,  grp:'UB' },
+  { no:9, code:'BH', zh:'巴格杭愛區',   en:'Bagakhangai (BH)',      key:'Bagakhangai', lat:47.4100, lon:107.5700, h:30,  c:100,  grp:'UB' },
+  { no:10, code:'ED', zh:'爾登鎮',       en:'Erdene (ED)',           key:'Erdene',      lat:47.8800, lon:107.7500, h:23,  c:85,   grp:'TOV' },
+  { no:11, code:'BD', zh:'巴彥德里格爾鎮', en:'Bayandelger (BD)',    key:'Bayandelger', lat:47.4300, lon:108.0500, h:0,   c:0,    grp:'TOV' },
+  { no:12, code:'ZM', zh:'宗木德鎮',     en:'Zuunmod (ZM)',          key:'Zuunmod',     lat:47.7080, lon:106.9500, h:171, c:573,  grp:'TOV' },
+  { no:13, code:'JT', zh:'扎爾格蘭特鎮', en:'Jargalant (JT)',        key:'Jargalant',   lat:48.2100, lon:105.9500, h:131, c:472,  grp:'TOV' },
+  { no:14, code:'BR', zh:'柏格諾鎮',     en:'Bornuur (BR)',          key:'Bornuur',     lat:48.4300, lon:106.2500, h:72,  c:242,  grp:'TOV' },
+  { no:15, code:'BS', zh:'巴特松柏爾鎮', en:'Batsumber (BS)',        key:'Batsumber',   lat:48.3300, lon:106.7500, h:84,  c:299,  grp:'TOV' }
+];
+
+const FACILITIES = [
+  { id:'center',  zh:'家扶蒙古中心', en:'TFCF Mongolia Center', lat:47.9124396, lon:106.9458534, color:'oklch(0.55 0.17 32)',
+    addr:'40th Building, Aman khuur-1, 313, 133, 783/137, 313/1373/13720, Bayanzurkh, Ulaanbaatar',
+    link:'https://www.google.com/maps/search/?api=1&query=40th%20Building%2C%20Aman%20khuur-1%2C%20Bayanzurkh%2C%20Ulaanbaatar%2C%20Mongolia' },
+  { id:'village', zh:'家扶村', en:'TFCF Village', lat:47.8269309, lon:106.6602399, color:'oklch(0.52 0.14 145)',
+    addr:'RMG5+JWG, Khan-Uul 12 khoroo, Ulaanbaatar 17140',
+    link:'https://www.google.com/maps/search/?api=1&query=RMG5%2BJWG%20Ulaanbaatar%20Mongolia' }
+];
+
+const GEO_SOURCES = [
+  'https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/MNG/ADM2/geoBoundaries-MNG-ADM2_simplified.geojson',
+  'https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/MNG/ADM2/geoBoundaries-MNG-ADM2_simplified.geojson'
+];
+const SPREAD = {};
+const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[^a-z]/g, '').replace(/kh/g, 'x');
+
+class Component extends DCLogic {
+  state = { metric: 'h', hover: null, selected: null, status: 'loading', shapes: null };
+
+  componentDidMount() {
+    this.initMap();
+    this.loadBoundaries();
+  }
+
+  setShapes(shapes, status) { this.setState({ shapes: shapes, status: status }, () => this.paint()); setTimeout(() => this.paint(), 0); }
+  setMetric(m) { this.setState({ metric: m }, () => this.paint()); setTimeout(() => this.paint(), 0); }
+  setHover(n) { this.setState({ hover: n }, () => this.paintHover()); setTimeout(() => this.paintHover(), 0); }
+
+  metricOf(d) { return this.state.metric === 'h' ? d.h : d.c; }
+  maxVal() { return Math.max.apply(null, DISTRICTS.map(d => this.metricOf(d))); }
+
+  color(v) {
+    const t = Math.pow(v / this.maxVal(), 0.62);
+    const L = 0.955 - 0.42 * t, C = 0.012 + 0.115 * t;
+    return 'oklch(' + L.toFixed(3) + ' ' + C.toFixed(3) + ' 195)';
+  }
+
+  initMap() {
+    const L = window.L;
+    if (!L || !this._mapEl || !this._mapEl.clientWidth || !this._mapEl.clientHeight) { setTimeout(() => this.initMap(), 120); return; }
+    if (this.map) return;
+    const map = L.map(this._mapEl, { zoomControl: true, attributionControl: true, scrollWheelZoom: true, fadeAnimation: false })
+      .setView([47.95, 107.1], 8);
+    const light = this.props.basemap === 'satellite'
+      ? L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, attribution: 'Tiles © Esri' })
+      : L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, subdomains: 'abc', attribution: '© OpenStreetMap contributors' });
+    light.addTo(map);
+    if (this.props.basemap !== 'satellite') {
+      let errs = 0, swapped = false;
+      light.on('tileerror', () => {
+        if (swapped || ++errs < 4) return;
+        swapped = true; map.removeLayer(light);
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, attribution: 'Tiles © Esri' }).addTo(map);
+      });
+    }
+    this.map = map;
+    this.polyLayer = L.layerGroup().addTo(map);
+    this.dotLayer = L.layerGroup().addTo(map);
+    this.facLayer = L.layerGroup().addTo(map);
+    this.polys = {}; this.dots = {};
+    map.invalidateSize();
+    map.fitBounds([[47.30, 105.75], [48.55, 108.55]], { padding: [30, 30] });
+    this.renderer = L.svg({ padding: 0.5 }).addTo(map);
+    this._spread = map.getZoom() < 10.5;
+    this.drawFacilities();
+    requestAnimationFrame(() => { if (this.map === map) this.paint(); });
+    this.home = L.latLngBounds([[47.30, 105.75], [48.55, 108.55]]);
+    const fit = () => { if (this.map !== map) return; map.invalidateSize(); map.fitBounds(this.home, { padding: [30, 30] }); this.paint(); };
+    map.whenReady(() => requestAnimationFrame(fit));
+    setTimeout(fit, 350);
+    if (window.ResizeObserver) {
+      let first = true;
+      this._ro = new ResizeObserver(() => {
+        if (this.map !== map) return;
+        map.invalidateSize();
+        if (first) { first = false; map.fitBounds(this.home, { padding: [30, 30] }); this.paint(); }
+      });
+      this._ro.observe(this._mapEl);
+    }
+    this._spread = map.getZoom() < 10.5;
+    map.on('zoomend', () => {
+      const s = map.getZoom() < 10.5;
+      if (s !== this._spread) { this._spread = s; this.paint(); }
+    });
+  }
+
+  updateLabels() {
+    if (!this.map) return;
+    const show = this.map.getZoom() >= 10;
+    Object.keys(this.labels || {}).forEach(k => {
+      const el = this.labels[k]._icon;
+      if (el) el.style.opacity = (show || !this.labels[k]._dense) ? '1' : '0.85';
+    });
+  }
+
+  componentWillUnmount() { if (this._ro) this._ro.disconnect(); if (this.map) { this.map.remove(); this.map = null; } }
+
+  drawFacilities() {
+    const L = window.L;
+    FACILITIES.forEach(f => {
+      const icon = L.divIcon({
+        className: '', iconSize: [30, 38], iconAnchor: [15, 37], popupAnchor: [0, -32],
+        html: '<svg width="30" height="38" viewBox="0 0 24 30" style="display:block;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))">' +
+          '<path d="M12 0.8C6.2 0.8 1.6 5.4 1.6 11.2c0 7.8 10.4 18 10.4 18s10.4-10.2 10.4-18C22.4 5.4 17.8 0.8 12 0.8z" fill="' + f.color + '" stroke="#fff" stroke-width="1.6"/>' +
+          '<circle cx="12" cy="11" r="4.2" fill="#fff"/></svg>'
+      });
+      const m = L.marker([f.lat, f.lon], { icon: icon, zIndexOffset: f.id === 'center' ? 3100 : 3000 }).addTo(this.facLayer);
+      m.bindPopup('<div style="min-width:210px"><div style="font-weight:700;font-size:14px">' + f.zh +
+        '</div><div style="font-size:11px;color:#666;margin-bottom:6px">' + f.en +
+        '</div><div style="font-size:11.5px;line-height:1.55">' + f.addr +
+        '</div><a href="' + f.link + '" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:11.5px;font-weight:600">在 Google 地圖開啟 ↗</a></div>');
+      m.bindTooltip('<div style="min-width:180px"><b>' + f.zh + '</b><br><span style="opacity:0.7">' + f.en + '</span><br><span style="font-size:11px">' + f.addr + '</span></div>', { direction: 'top', offset: [0, -32] });
+      this['fac_' + f.id] = m;
+    });
+  }
+
+  paint() {
+    if (!this.map) return;
+    try { this._paint(); } catch (e) { window.__paintErr = (e && e.stack) || String(e); }
+  }
+
+  _paint() {
+    const L = window.L;
+    this.polyLayer.clearLayers(); this.dotLayer.clearLayers();
+    this.polys = {}; this.dots = {}; this.labels = {};
+    const shapes = this.state.shapes || {};
+    DISTRICTS.forEach(d => {
+      const v = this.metricOf(d);
+      const fill = this.color(v);
+      const rings = shapes[d.key];
+      if (rings) {
+        const p = L.polygon(rings, { renderer: this.renderer, color: 'oklch(0.34 0.04 195)', weight: 1.6, opacity: 0.95, fillColor: fill, fillOpacity: 0.72 }).addTo(this.polyLayer);
+        p.on('mouseover', () => this.setHover(d.no));
+        p.on('mouseout', () => this.setHover(null));
+        p.on('click', () => this.focus(d));
+        this.polys[d.no] = p;
+      }
+      const center = rings ? L.polygon(rings).getBounds().getCenter() : L.latLng(d.lat, d.lon);
+      const fg = v / this.maxVal() > 0.55 ? '#fff' : 'oklch(0.22 0.02 60)';
+      const fontSize = Math.max(9, Math.min(15, 9 + 6 * Math.pow(v / this.maxVal(), 0.5)));
+      const dot = L.marker(center, {
+        zIndexOffset: 400,
+        icon: L.divIcon({ className: '', iconSize: [40, 16], iconAnchor: [20, 8],
+          html: '<div style="width:40px;height:16px;display:flex;align-items:center;justify-content:center;' +
+            'font:800 ' + fontSize.toFixed(1) + 'px/1 \'IBM Plex Sans\',sans-serif;color:' + fg +
+            ';text-shadow:0 1px 2px rgba(0,0,0,.18);cursor:pointer;pointer-events:none">' + v + '</div>' })
+      }).addTo(this.dotLayer);
+      dot._dense = d.no <= 6;
+      this.labels[d.no] = dot;
+      dot.bindTooltip('<b>' + d.code + '區</b><br>' + d.en + '<br>戶數 ' + d.h + '　兒童 ' + d.c, { direction: 'top', offset: [0, -14] });
+      this.dots[d.no] = dot;
+    });
+    this.updateLabels();
+    if (!this._fitted && Object.keys(this.polys).length) {
+      this._fitted = true;
+      const b = L.latLngBounds([]);
+      Object.keys(this.polys).forEach(k => b.extend(this.polys[k].getBounds()));
+      FACILITIES.forEach(x => b.extend([x.lat, x.lon]));
+      this.home = b;
+      this.map.fitBounds(b, { padding: [26, 26] });
+      this._spread = this.map.getZoom() < 10.5;
+    }
+  }
+
+  paintHover() {
+    const h = this.state.hover;
+    Object.keys(this.polys || {}).forEach(k => {
+      this.polys[k].setStyle({ weight: Number(k) === h ? 3.4 : 1.6, color: Number(k) === h ? 'oklch(0.45 0.16 32)' : 'oklch(0.34 0.04 195)' });
+    });
+  }
+
+  focus(d) {
+    if (!this.map) return;
+    const p = this.polys[d.no];
+    if (p) this.map.fitBounds(p.getBounds(), { padding: [40, 40] });
+    else this.map.setView([d.lat, d.lon], 11);
+    if (this.dots[d.no]) this.dots[d.no].openTooltip();
+  }
+
+  async loadBoundaries() {
+    try {
+      const cached = localStorage.getItem('tfcf_mn_bounds_v2');
+      if (cached) { this.setShapes(JSON.parse(cached), 'ok'); return; }
+    } catch (e) { void e; }
+    for (const url of GEO_SOURCES) {
+      try {
+        const res = await fetch(url, { cache: 'force-cache' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const gj = await res.json();
+        const shapes = this.buildShapes(gj.features || []);
+        const n = Object.keys(shapes).length;
+        if (!n) throw new Error('no match');
+        this.setShapes(shapes, n >= 12 ? 'ok' : 'partial');
+        try { localStorage.setItem('tfcf_mn_bounds_v2', JSON.stringify(shapes)); } catch (e) { void e; }
+        return;
+      } catch (e) { void e; }
+    }
+    this.setState({ status: 'fail' });
+  }
+
+  buildShapes(features) {
+    const out = {}, score = {};
+    const keys = DISTRICTS.map(d => ({ d: d, nk: norm(d.key) }));
+    features.forEach(f => {
+      const name = norm(f.properties && (f.properties.shapeName || f.properties.name));
+      if (!name) return;
+      const hit = keys.find(k => name.indexOf(k.nk) === 0);
+      if (!hit) return;
+      const g = f.geometry; if (!g) return;
+      const polys = g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : null;
+      if (!polys) return;
+      const rings = [];
+      polys.forEach(poly => poly.forEach((ring, i) => {
+        if (i > 0) return;
+        rings.push(ring.map(c => [Number(c[1].toFixed(5)), Number(c[0].toFixed(5))]));
+      }));
+      if (!rings.length) return;
+      let sx = 0, sy = 0, n = 0;
+      rings.forEach(r => r.forEach(p => { sx += p[0]; sy += p[1]; n++; }));
+      const dist = Math.pow(sx / n - hit.d.lat, 2) + Math.pow(sy / n - hit.d.lon, 2);
+      if (dist > 4) return;
+      if (score[hit.d.key] === undefined || dist < score[hit.d.key]) { out[hit.d.key] = rings; score[hit.d.key] = dist; }
+    });
+    return out;
+  }
+
+  renderVals() {
+    const m = this.state.metric;
+    const max = this.maxVal();
+    const tab = on => ({
+      font: '600 12.5px/1 "Noto Sans TC",sans-serif', padding: '9px 14px', border: 'none', cursor: 'pointer',
+      borderRadius: '7px', background: on ? 'oklch(1 0 0)' : 'transparent',
+      color: on ? 'oklch(0.22 0.02 60)' : 'oklch(0.50 0.02 60)',
+      boxShadow: on ? '0 1px 4px oklch(0.2 0.02 60 / 0.14)' : 'none', display: 'flex', gap: '5px', alignItems: 'baseline'
+    });
+    const ranked = DISTRICTS.slice().sort((a, b) => this.metricOf(b) - this.metricOf(a)).map(d => {
+      const v = this.metricOf(d), on = this.state.hover === d.no;
+      return {
+        no: d.no, code: d.code + '區', zh: d.zh, en: d.en, value: v.toLocaleString(),
+        onClick: () => this.focus(d),
+        onEnter: () => this.setHover(d.no),
+        onLeave: () => this.setHover(null),
+        rowStyle: { display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '7px 8px',
+          border: 'none', borderRadius: '8px', cursor: 'pointer', textAlign: 'left',
+          background: on ? 'oklch(0.94 0.02 195)' : 'transparent', font: 'inherit', color: 'inherit' },
+        badgeStyle: { width: '21px', height: '21px', flex: 'none', borderRadius: '50%',
+          background: this.color(v), border: '1px solid oklch(0.80 0.03 195)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          font: '700 10.5px/1 "IBM Plex Sans",sans-serif',
+          color: v / max > 0.55 ? '#fff' : 'oklch(0.30 0.02 60)' },
+        barStyle: { display: 'block', height: '100%', width: (max ? (v / max) * 100 : 0) + '%',
+          background: 'oklch(0.55 0.11 195)', borderRadius: '4px' }
+      };
+    });
+    const legend = [0.1, 0.3, 0.5, 0.75, 1].map(t => ({
+      style: { display: 'block', width: '30px', height: '11px', background: this.color(t * max) }
+    }));
+    const st = this.state.status;
+    return {
+      metricLabel: m === 'h' ? '戶數 Households' : '兒童數 Children',
+      setHouseholds: () => this.setMetric('h'),
+      setChildren: () => this.setMetric('c'),
+      tabHouseholdsStyle: tab(m === 'h'),
+      tabChildrenStyle: tab(m === 'c'),
+      ranked: ranked,
+      legend: legend,
+      legendMax: max.toLocaleString(),
+      mapRef: el => { this._mapEl = el; },
+      flyCenter: () => { this.map && this.map.setView([FACILITIES[0].lat, FACILITIES[0].lon], 14); this['fac_center'].openPopup(); },
+      flyVillage: () => { this.map && this.map.setView([FACILITIES[1].lat, FACILITIES[1].lon], 14); this['fac_village'].openPopup(); },
+      statusText: st === 'loading' ? '載入行政區邊界中… Loading district boundaries'
+        : st === 'fail' ? '邊界資料載入失敗，改以圓點顯示 Boundary data unavailable — showing circles only'
+        : st === 'partial' ? '部分邊界無資料 Some boundaries unavailable' : '',
+      statusStyle: { position: 'absolute', zIndex: 500, top: '14px', left: '50%', transform: 'translateX(-50%)',
+        display: st === 'ok' ? 'none' : 'block', background: 'oklch(1 0 0 / 0.95)',
+        border: '1px solid oklch(0.88 0.01 85)', borderRadius: '8px', padding: '8px 14px',
+        font: '500 11.5px/1.4 "Noto Sans TC",sans-serif', color: 'oklch(0.40 0.02 60)',
+        boxShadow: '0 3px 12px oklch(0.2 0.02 60 / 0.12)' }
+    };
+  }
+}
+
+</script>
+</body>
+</html>
